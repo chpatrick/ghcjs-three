@@ -7,6 +7,8 @@ module GHCJS.Three.Camera (
     mkOrthographicCamera, mkPerspectiveCamera
     ) where
 
+import Control.Monad
+
 import GHCJS.Types
 
 import GHCJS.Three.Monad
@@ -14,6 +16,7 @@ import GHCJS.Three.Object3D
 import GHCJS.Three.Visible
 import GHCJS.Three.GLNode
 import GHCJS.Three.Matrix
+import GHCJS.Three.Vector
 
 newtype Camera = Camera {
     cameraObject3D :: Object3D
@@ -54,6 +57,9 @@ foreign import javascript unsafe "($2)['projectionMatrix']['copy']($1)"
 foreign import javascript unsafe "($2)['matrixWorldInverse']['copy']($1)"
     thr_setMatrixWorldInverse :: JSVal -> JSVal -> Three ()
 
+foreign import javascript unsafe "($1)['getWorldDirection']()"
+    thr_getWorldDirection :: JSVal -> Three TVector3
+
 class (ThreeJSVal c) => IsCamera c where
     toCamera :: c -> Camera
     toCamera = fromJSVal . toJSVal
@@ -87,6 +93,9 @@ class (ThreeJSVal c) => IsCamera c where
 
     setMatrixWorldInverse :: Matrix4 -> c -> Three ()
     setMatrixWorldInverse m c = thr_setMatrixWorldInverse (toJSVal m) (toJSVal c)
+
+    getWorldDirection :: c -> Three Vector3
+    getWorldDirection = toVector3 <=< (thr_getWorldDirection . toJSVal)
 
 instance IsCamera Camera
 
