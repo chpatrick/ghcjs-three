@@ -27,12 +27,12 @@ newtype RaycastResult = RaycastResult {
     rcResObject :: BaseObject
 } deriving (ThreeJSVal)
 
-foreign import javascript unsafe "($2)['intersectObject']($1)"
-    thr_intersectObject :: JSVal -> JSVal -> Three JSVal
-foreign import javascript unsafe "(($2)['intersectObject']($1)).length"
-    thr_intersectingObject :: JSVal -> JSVal -> Three Int
-foreign import javascript unsafe "($2)['intersectObjects']($1)"
-    thr_intersectObjects :: JSVal -> JSVal -> Three JSVal
+foreign import javascript unsafe "($3)['intersectObject']($1, $2)"
+    thr_intersectObject :: JSVal -> Bool -> JSVal -> Three JSVal
+foreign import javascript unsafe "(($3)['intersectObject']($1, $2)).length"
+    thr_intersectingObject :: JSVal -> Bool -> JSVal -> Three Int
+foreign import javascript unsafe "($3)['intersectObjects']($1, $2)"
+    thr_intersectObjects :: JSVal -> Bool -> JSVal -> Three JSVal
 
 getResult :: Maybe [JSVal] -> [RaycastResult]
 getResult = map fromJSVal . fromMaybe []
@@ -74,15 +74,15 @@ getRay :: Raycaster -> Three Ray
 getRay = fmap fromJSVal . thr_getRay . toJSVal
 
 -- | intersectObject
-intersectObject :: IsObject3D obj => obj -> Raycaster -> Three [RaycastResult]
-intersectObject obj ray = getResult <$> (thr_intersectObject (toJSVal obj) (toJSVal ray) >>= Marshal.fromJSVal)
+intersectObject :: IsObject3D obj => obj -> Bool -> Raycaster -> Three [RaycastResult]
+intersectObject obj recursive ray = getResult <$> (thr_intersectObject (toJSVal obj) recursive (toJSVal ray) >>= Marshal.fromJSVal)
 
-intersectingObject :: IsObject3D obj => obj -> Raycaster -> Three Bool
-intersectingObject obj ray = (> 0) <$> thr_intersectingObject (toJSVal obj) (toJSVal ray)
+intersectingObject :: IsObject3D obj => obj -> Bool -> Raycaster -> Three Bool
+intersectingObject obj recursive ray = (> 0) <$> thr_intersectingObject (toJSVal obj) recursive (toJSVal ray)
 
 -- | intersectObjects
-intersectObjects :: IsObject3D obj => [obj] -> Raycaster -> Three [RaycastResult]
-intersectObjects objs ray = getResult <$> ((Marshal.toJSVal $ map toJSVal objs) >>= flip thr_intersectObjects (toJSVal ray) >>= Marshal.fromJSVal)
+intersectObjects :: IsObject3D obj => [obj] -> Bool -> Raycaster -> Three [RaycastResult]
+intersectObjects objs recursive ray = getResult <$> ((Marshal.toJSVal $ map toJSVal objs) >>= (\jsObjs -> thr_intersectObjects jsObjs recursive (toJSVal ray)) >>= Marshal.fromJSVal)
 
 -- | create a new raycaster
 foreign import javascript unsafe "new window['THREE']['Raycaster']($1, $2, $3, $4)"
