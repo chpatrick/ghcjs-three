@@ -93,6 +93,8 @@ foreign import javascript unsafe "($2)['localToWorld']($1)"
     thr_localToWorld :: JSVal -> JSVal -> Three JSVal
 foreign import javascript unsafe "($2)['worldToLocal']($1)"
     thr_worldToLocal :: JSVal -> JSVal -> Three JSVal
+foreign import javascript unsafe "($1)['getWorldPosition']()"
+    thr_getWorldPosition :: JSVal -> Three JSVal
 
 -- | lookAt a position, the vector should be in the world coordinate
 foreign import javascript unsafe "($2)['lookAt']($1)"
@@ -236,6 +238,9 @@ class (ThreeJSVal o) => IsObject3D o where
     worldToLocal v o = do
         vv <- mkTVector3 v
         (toVector3 . fromJSVal) =<< thr_worldToLocal (toJSVal vv) (toJSVal o)
+
+    getWorldPosition :: o -> Three Vector3
+    getWorldPosition o = (toVector3 . fromJSVal) =<< thr_getWorldPosition (toJSVal o)
 
     lookAt :: Vector3 -> o -> Three ()
     lookAt v o = do
